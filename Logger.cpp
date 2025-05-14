@@ -3,8 +3,7 @@
 #include <ctime>
 #include <iomanip>
 #include <sstream>
-
-std::unique_ptr<Logger> g_logger;
+#include <chrono>
 
 Logger::Logger(const std::string& filename)
     : filename_(filename),
@@ -86,13 +85,13 @@ void Logger::flush() {
 
 std::string Logger::getCurrentTimestamp() const {
     auto now = std::chrono::system_clock::now();
-    auto time = std::chrono::system_clock::to_time_t(now);
+    auto time_t_now = std::chrono::system_clock::to_time_t(now);
     auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
         now.time_since_epoch()
     ).count() % 1000;
 
     std::stringstream ss;
-    ss << std::put_time(std::localtime(&time), "%Y-%m-%d %H:%M:%S");
+    ss << std::put_time(std::localtime(&time_t_now), "%Y-%m-%d %H:%M:%S");
     ss << '.' << std::setfill('0') << std::setw(3) << ms;
     return ss.str();
 }

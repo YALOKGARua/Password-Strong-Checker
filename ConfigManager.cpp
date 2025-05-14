@@ -3,7 +3,6 @@
 #include <sstream>
 #include <algorithm>
 #include <stdexcept>
-#include <json/json.h>
 
 ConfigManager::ConfigManager() {
     initializeDefaults();
@@ -91,20 +90,23 @@ bool ConfigManager::loadFromFile(const std::string& filename) {
         std::ifstream file(filename);
         if (!file.is_open()) return false;
 
-        Json::Value root;
-        file >> root;
-
-        if (root.isMember("min_length")) setMinLength(root["min_length"].asUInt());
-        if (root.isMember("max_length")) setMaxLength(root["max_length"].asUInt());
-        if (root.isMember("strict_mode")) setStrictMode(root["strict_mode"].asBool());
-        if (root.isMember("min_entropy_bits")) setMinEntropyBits(root["min_entropy_bits"].asInt());
-        
-        if (root.isMember("common_words")) {
-            common_words_.clear();
-            const Json::Value& words = root["common_words"];
-            for (const auto& word : words) common_words_.push_back(word.asString());
+        std::string line;
+        while (std::getline(file, line)) {
+            if (line.empty() || line[0] == '#') continue;
+            
+            std::istringstream iss(line);
+            std::string key;
+            if (std::getline(iss, key, '=')) {
+                std::string value;
+                if (std::getline(iss, value)) {
+                    if (key == "min_length") setMinLength(std::stoi(value));
+                    else if (key == "max_length") setMaxLength(std::stoi(value));
+                    else if (key == "strict_mode") setStrictMode(value == "true" || value == "1");
+                    else if (key == "min_entropy_bits") setMinEntropyBits(std::stoi(value));
+                    else if (key == "common_word") addCommonWord(value);
+                }
+            }
         }
-
         return true;
     }
     catch (const std::exception& e) {
@@ -114,21 +116,18 @@ bool ConfigManager::loadFromFile(const std::string& filename) {
 
 bool ConfigManager::saveToFile(const std::string& filename) const {
     try {
-        Json::Value root;
-        root["min_length"] = static_cast<Json::UInt>(min_length_);
-        root["max_length"] = static_cast<Json::UInt>(max_length_);
-        root["strict_mode"] = strict_mode_;
-        root["min_entropy_bits"] = min_entropy_bits_;
-
-        Json::Value words(Json::arrayValue);
-        for (const auto& word : common_words_) words.append(word);
-        root["common_words"] = words;
-
         std::ofstream file(filename);
         if (!file.is_open()) return false;
 
-        Json::StyledWriter writer;
-        file << writer.write(root);
+        file << "min_length=" << min_length_ << "\n";
+        file << "max_length=" << max_length_ << "\n";
+        file << "strict_mode=" << (strict_mode_ ? "true" : "false") << "\n";
+        file << "min_entropy_bits=" << min_entropy_bits_ << "\n";
+
+        for (const auto& word : common_words_) {
+            file << "common_word=" << word << "\n";
+        }
+        
         return true;
     }
     catch (const std::exception& e) {

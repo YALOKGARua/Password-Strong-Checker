@@ -3,41 +3,37 @@ project(PasswordChecker VERSION 1.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTORCC ON)
-set(CMAKE_AUTOUIC ON)
 
-find_package(Qt5 COMPONENTS Widgets REQUIRED)
-find_package(jsoncpp REQUIRED)
+include(FetchContent)
+
+FetchContent_Declare(ftxui
+  GIT_REPOSITORY https://github.com/ArthurSonzogni/FTXUI
+  GIT_TAG v4.0.0
+)
+
+FetchContent_MakeAvailable(ftxui)
 
 set(SOURCES
     ConfigManager.cpp
     Logger.cpp
     main.cpp
-    MainWindow.cpp
     PasswordChecker.cpp
-    TestSuite.cpp
     Utils.cpp
 )
 
 set(HEADERS
     ConfigManager.hpp
     Logger.hpp
-    MainWindow.hpp
     PasswordChecker.hpp
-    TestSuite.hpp
     Utils.hpp
 )
 
-set(UI_FILES
-    MainWindow.xml
-)
-
-add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS} ${UI_FILES})
+add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
-    Qt5::Widgets
-    jsoncpp_lib
+    ftxui::screen
+    ftxui::dom
+    ftxui::component
 )
 
 if(MSVC)
@@ -48,4 +44,4 @@ endif()
 
 install(TARGETS ${PROJECT_NAME}
     RUNTIME DESTINATION bin
-) 
+)
